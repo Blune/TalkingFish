@@ -4,6 +4,8 @@ Documentation of the project:
 ----
 
 Step 1 - Understand the original setup
+----
+
 ![Cables](images/cablesOriginal.jpg)   
 
 ----
