@@ -5,7 +5,7 @@ Documentation of the project:
 
 Used Parts:
 ----
-Arduino Pro Mini 168 5V    
+Arduino Pro Mini 168 16MHz 5V    
 DF Player Mini    
 Motor drive module DAYPOWER Motor-9110    
 CO2 Sensor: TFA Dostmann AirControl Mini CO2 Meter TFA 31.5006    
