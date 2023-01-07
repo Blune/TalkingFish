@@ -19,10 +19,9 @@ The fish uses two motors to move. One is opening and closing the mouth. The othe
 
 ----
 
-Motor 1:
+Motor 1:    
 Open mouth: White cable  (+) Red cable    (-)   
-
-Motor 2:
+Motor 2:    
 Move head:  Orange cable (+) Black cable  (-)    
 Move back:  Black cable  (+) Orange cable (-)
 
