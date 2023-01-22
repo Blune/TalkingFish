@@ -2,15 +2,17 @@
 
 Documentation of the project:
 ----
-The idea was to have the billy bass fish integrated in the CO2 monitoring system so that it can trigger an accoustic alarm everytime the air quality gets into a critical state. Since the fish contained other elements like a button, a photodiode and a pieze alement it was also a goal to reuse as much as possible:    
+The idea was to have the billy bass fish integrated in the CO2 monitoring system so that it can trigger an accoustic alarm everytime the air quality gets into a critical state. Since the fish contained other elements like a button, a photodiode and a pieze element it was an additional goal to reuse as much of the electronics as possible:    
 ![Fish](images/fish.png)   
 
 Used Parts:
 ----
+Billy Bass fish
 Arduino Pro Mini 168 16MHz 5V    
-DF Player Mini    
+DF Player Mini with an SD card    
 Motor drive module DAYPOWER Motor-9110    
-CO2 Sensor: TFA Dostmann AirControl Mini CO2 Meter TFA 31.5006    
+CO2 Sensor: TFA Dostmann AirControl Mini CO2 Meter TFA 31.5006 
+Micro usb connectir
 
 
 Understand the original setup
