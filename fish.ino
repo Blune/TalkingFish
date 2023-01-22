@@ -1,22 +1,35 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
-#define ALARM_PIN A1
+
+//PINS
+//analog
 #define LICHT_PIN A2
 #define KLOPF_PIN A3
+//digital
+#define TESTHIGH_PIN 3
+#define ALARM_PIN 4
 #define BUTTON_PIN 5
 #define MUNDAUF_PIN 6
 #define MUNDZU_PIN 7
 #define FLOSSE_PIN 8
 #define KOPF_PIN 9
+
+//SOUNDS
 #define ALARM_SOUND 1
 #define TOUCH_SOUND 4
 #define LIGHT_SOUND 5
 #define BUTTON_SOUND 6
+
+//VARIABLES
+unsigned long currentMillis;
+unsigned long lastAlarm = 0;
+unsigned long alarmPause = 1000UL * 30UL; // 10 seconds interval
 byte playerBootingTime = 100;
 SoftwareSerial mySoftwareSerial(10,11);
 DFRobotDFPlayerMini myDFPlayer;
+
 void setup() {
-  // put your setup code here, to run once:
+  //Motors
   pinMode(MUNDAUF_PIN, OUTPUT);
   digitalWrite(MUNDAUF_PIN, LOW);
   pinMode(MUNDZU_PIN, OUTPUT);
@@ -25,8 +38,16 @@ void setup() {
   digitalWrite(FLOSSE_PIN, LOW);
   pinMode(KOPF_PIN, OUTPUT);
   digitalWrite(KOPF_PIN, LOW);
+  //Alarm
+
+  pinMode(ALARM_PIN, INPUT);
+  pinMode(TESTHIGH_PIN, OUTPUT);
+  digitalWrite(TESTHIGH_PIN, HIGH);
+  
   //Button
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  
+  //Player
   mySoftwareSerial.begin(9600);
   Serial.begin(9600);
   delay(playerBootingTime);
@@ -37,23 +58,29 @@ void setup() {
   }
   
   setupPlayer();
-  Serial.println(F("DFPlayer Mini setup done."));
+  Serial.println(F("Setup done!"));
 }
+
 void loop() {
   //Debug Info:
-  Serial.print("Piezo sagt: "); // analogRead(KLOPF_PIN
+  Serial.print("Piezo sagt: ");
   Serial.println(analogRead(KLOPF_PIN));
-  Serial.print("Photowiderstand sagt: "); // + analogRead(LICHT_PIN
+  
+  Serial.print("Photowiderstand sagt: ");
   Serial.println(analogRead(LICHT_PIN));
+
+  Serial.print("AlarmPin sagt: ");
+  Serial.println(digitalRead(ALARM_PIN));
+
+  Serial.print("LastAlarm sagt: ");
+  Serial.println(lastAlarm);
   Serial.println("");
+
+  
   if(!digitalRead(BUTTON_PIN)){
     sayHilfe();
     delay(2000);
   }  
-  else if(digitalRead(ALARM_PIN)){
-    sayAlarm();
-    delay(2000);
-  }
   else if(analogRead(KLOPF_PIN) < 506 || analogRead(KLOPF_PIN) > 522){
     sayTouch();
     delay(2000);
@@ -63,24 +90,38 @@ void loop() {
     sayProblem();
     delay(2000);
   }  
+  else if(digitalRead(ALARM_PIN)){
+      currentMillis = millis();
+      if(lastAlarm == 0 || currentMillis - lastAlarm > alarmPause){
+        lastAlarm = currentMillis;
+        sayAlarm();
+        delay(2000); 
+      }
+  }
+  
 }
+
 void wackelFlosse(){
   digitalWrite(FLOSSE_PIN, HIGH);
   delay(500);
   digitalWrite(FLOSSE_PIN, LOW);
 }
+
 void sayWord(int duration) {
   digitalWrite(MUNDAUF_PIN, HIGH);
   delay(duration);
   digitalWrite(MUNDAUF_PIN, LOW);
 }
+
 void raiseHead(){
   digitalWrite(KOPF_PIN, HIGH);
   delay(500);
 }
+
 void lowerHead(){
   digitalWrite(KOPF_PIN, LOW);
 }
+
 void sayAlarm(){
   raiseHead();
   myDFPlayer.play(ALARM_SOUND);
@@ -90,6 +131,7 @@ void sayAlarm(){
   delay(716);
   lowerHead();
 }
+
 void sayProblem(){
   raiseHead();
   myDFPlayer.play(LIGHT_SOUND);
@@ -110,6 +152,7 @@ void sayProblem(){
   lowerHead();
   wackelFlosse();
 }
+
 void sayTouch() {
   raiseHead();
   myDFPlayer.play(TOUCH_SOUND);
@@ -121,6 +164,7 @@ void sayTouch() {
   lowerHead();
   wackelFlosse();
 }
+
 void sayHilfe(){
   raiseHead();
   myDFPlayer.play(BUTTON_SOUND);
@@ -153,6 +197,7 @@ void sayHilfe(){
   delay(50);
   lowerHead();
 }
+
 void setupPlayer()
 {
   myDFPlayer.setTimeOut(500);
