@@ -17,6 +17,9 @@ Understand the original setup
 ----
 
 The fish uses two motors to move. One is opening and closing the mouth. The other one is moving the head and the tail.    
+There is also a piezo element connected to the blue wires which we guess will return a buzzing sound if the battery gets on a critical level.
+The yellow cables are connected to a photodiode which will detect a change of the lightning.
+The white cables are connected to the button on the front which will usually trigger the movement of the fish. 
 ![Cables](images/cablesOriginal.jpg)   
 
 ----
