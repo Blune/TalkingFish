@@ -2,7 +2,7 @@
 
 Documentation of the project:
 ----
-The idea was to have the billy bass fish integrated in the CO2 monitoring system so that it can trigger an accoustic alarm everytime the air quality gets into a critical state. Since the fish contained other elements like a button, a photodiode and a pieze alement it was also a goal to reuse as much as possible:
+The idea was to have the billy bass fish integrated in the CO2 monitoring system so that it can trigger an accoustic alarm everytime the air quality gets into a critical state. Since the fish contained other elements like a button, a photodiode and a pieze alement it was also a goal to reuse as much as possible:    
 ![Fish](images/fish.png)   
 
 Used Parts:
