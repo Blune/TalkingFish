@@ -22,8 +22,10 @@
 
 //VARIABLES
 unsigned long currentMillis;
-unsigned long lastAlarm = 0;
-unsigned long alarmPause = 1000UL * 30UL; // 10 seconds interval
+unsigned long lastSoundAlarm = 0;
+unsigned long lastTailAlarm = 0;
+unsigned long alarmSoundPause = 1000UL * 60UL * 15UL; // 15 min interval
+unsigned long alarmTailPause = 1000UL * 30UL; // 30 seconds interval
 byte playerBootingTime = 100;
 SoftwareSerial mySoftwareSerial(10,11);
 DFRobotDFPlayerMini myDFPlayer;
@@ -72,8 +74,6 @@ void loop() {
   Serial.print("AlarmPin sagt: ");
   Serial.println(digitalRead(ALARM_PIN));
 
-  Serial.print("LastAlarm sagt: ");
-  Serial.println(lastAlarm);
   Serial.println("");
 
   
@@ -92,9 +92,14 @@ void loop() {
   }  
   else if(digitalRead(ALARM_PIN)){
       currentMillis = millis();
-      if(lastAlarm == 0 || currentMillis - lastAlarm > alarmPause){
-        lastAlarm = currentMillis;
+      if(lastSoundAlarm == 0 || currentMillis - lastSoundAlarm > alarmSoundPause){
+        lastSoundAlarm = currentMillis;
         sayAlarm();
+        delay(2000); 
+      }
+      else if(currentMillis - lastTailAlarm > alarmTailPause){
+        lastTailAlarm = currentMillis;
+        wackelFlosse();
         delay(2000); 
       }
   }
