@@ -26,6 +26,7 @@ unsigned long lastSoundAlarm = 0;
 unsigned long lastTailAlarm = 0;
 unsigned long alarmSoundPause = 1000UL * 60UL * 15UL; // 15 min interval
 unsigned long alarmTailPause = 1000UL * 30UL; // 30 seconds interval
+unsigned long piezoAverage;
 byte playerBootingTime = 100;
 SoftwareSerial mySoftwareSerial(10,11);
 DFRobotDFPlayerMini myDFPlayer;
@@ -61,6 +62,8 @@ void setup() {
   
   setupPlayer();
   Serial.println(F("Setup done!"));
+
+  piezoAverage = getPiezoSensorAverage();
 }
 
 void loop() {
@@ -103,6 +106,11 @@ void loop() {
         delay(2000); 
       }
   }
+  
+}
+
+int getPiezoSensorAverage(){
+  return (analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) +analogRead(KLOPF_PIN)) / 5;
   
 }
 
