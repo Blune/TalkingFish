@@ -3,6 +3,7 @@
 
 //PINS
 //analog
+#define SOUND_PIN A1
 #define LICHT_PIN A2
 #define KLOPF_PIN A3
 //digital
@@ -19,6 +20,12 @@
 #define TOUCH_SOUND 4
 #define LIGHT_SOUND 5
 #define BUTTON_SOUND 6
+#define ZIEGE_SOUND 7
+#define KINSKI_SCHNAUZE_SOUND 8
+#define KINSKI_ARBEITE_SOUND 9
+#define KINSKI_KANNSONICH_SOUND 10
+#define KINSKI_WASSOLLDAS_SOUND 11
+#define KINSKI_IMWEG_SOUND 12
 
 //VARIABLES
 unsigned long currentMillis;
@@ -26,12 +33,39 @@ unsigned long lastSoundAlarm = 0;
 unsigned long lastTailAlarm = 0;
 unsigned long alarmSoundPause = 1000UL * 60UL * 15UL; // 15 min interval
 unsigned long alarmTailPause = 1000UL * 30UL; // 30 seconds interval
-unsigned long piezoAverage;
+unsigned long lastAction = 1000; // Sytemzeit (Millis) der letzten Aktion überhaupt
+unsigned long last_klatsch = 0;
+unsigned long silent_time = 0;
+bool loud = false;
+
+byte touchSensitivity = 5;
+unsigned int touchWert = 0;
+int klopf_10; // gemessener Klopfwert (10 Bit)
+int real_klopf; // Differenz zum Durchschnitt (Absolutwert 10 Bit)
+int average_klopf_10 = 0; // durchschnittlticher Klopfwert (10 Bit)
+int average_klopf_13 = 0; // durchschnittlticher Klopfwert (13 Bit)
+
+int light_10; // gemessener Lichtwert (10 Bit)
+int average_light_10 = 0; // durchschnittlticher Lichtwert (10 Bit)
+long average_light_20 = 0; // durchschnittlticher Lichtwert (13 Bit)
+
+byte soundSensitivity = 5; // 1 -> sehr empfindlich , 255 -> unempfindlich
+unsigned int soundWert = 0;
+int sound_10; // gemessener Soundwert (10 Bit)
+int average_sound_10 = 0; // durchschnittlticher Soundwert (10 Bit)
+int average_sound_15 = 0; // durchschnittlticher Soundwert (15 Bit)
+int volume_10; // Lautstärke (Differenz zum Durchschnittswert, Absolutwert 10 Bit)
+int average_volume_10; // Lautstärke (Durchschnitt über 2 Minuten, 10 Bit)
+long average_volume_27; // Lautstärke (Durchschnitt über 2 Minuten, 27 Bit)
+
 byte playerBootingTime = 100;
 SoftwareSerial mySoftwareSerial(10,11);
 DFRobotDFPlayerMini myDFPlayer;
 
 void setup() {
+  //Sound: Analog digital Messung beschleunigen
+  // ADCSRA = (ADCSRA & 248) | 6; // doch nicht nötig (Geschwindigkeit reicht aus)
+  
   //Motors
   pinMode(MUNDAUF_PIN, OUTPUT);
   digitalWrite(MUNDAUF_PIN, LOW);
@@ -41,8 +75,8 @@ void setup() {
   digitalWrite(FLOSSE_PIN, LOW);
   pinMode(KOPF_PIN, OUTPUT);
   digitalWrite(KOPF_PIN, LOW);
+  
   //Alarm
-
   pinMode(ALARM_PIN, INPUT);
   pinMode(TESTHIGH_PIN, OUTPUT);
   digitalWrite(TESTHIGH_PIN, HIGH);
@@ -52,7 +86,7 @@ void setup() {
   
   //Player
   mySoftwareSerial.begin(9600);
-  Serial.begin(9600);
+  Serial.begin(38400);
   delay(playerBootingTime);
   if (!myDFPlayer.begin(mySoftwareSerial)) 
   {  
@@ -62,56 +96,191 @@ void setup() {
   
   setupPlayer();
   Serial.println(F("Setup done!"));
-
-  piezoAverage = getPiezoSensorAverage();
+  
+  average_sound_15 = analogRead(SOUND_PIN) << 5; // Durchschnittswert (grob) setzen
 }
 
 void loop() {
   //Debug Info:
-  Serial.print("Piezo sagt: ");
-  Serial.println(analogRead(KLOPF_PIN));
+  //
+  //Serial.print("Piezo sagt: ");
+  //Serial.println(analogRead(KLOPF_PIN));
+
+  //Serial.print("Sound sagt: ");
+  //Serial.println(analogRead(SOUND_PIN));
   
-  Serial.print("Photowiderstand sagt: ");
-  Serial.println(analogRead(LICHT_PIN));
+  //Serial.print("Licht: ");
+  //Serial.println(analogRead(LICHT_PIN));
 
-  Serial.print("AlarmPin sagt: ");
-  Serial.println(digitalRead(ALARM_PIN));
+  //Serial.print("AlarmPin sagt: ");
+  //Serial.println(digitalRead(ALARM_PIN));
 
-  Serial.println("");
+  //Serial.println("");
 
+  //Serial.print("K: ");
+  //Serial.println(klopf_10);
+ 
+
+  //Serial.print("piezo 10 sagt: ");
+  //Serial.println(piezo_10);
+
+  //Serial.print("touchWert sagt: ");
+  //Serial.println(touchWert);
+
+  klopf_10 = analogRead(KLOPF_PIN);
+  average_klopf_10 = (average_klopf_13 + 4) >> 3;
+  average_klopf_13 += klopf_10 - average_klopf_10;
+  real_klopf = abs(klopf_10 - average_klopf_10);
+  touchWert += real_klopf;
+  if(touchWert >= 3) touchWert -= 3;
+  else touchWert = 0;
   
   if(!digitalRead(BUTTON_PIN)){
     sayHilfe();
     delay(2000);
+    lastAction = millis();
   }  
-  else if(analogRead(KLOPF_PIN) < 506 || analogRead(KLOPF_PIN) > 522){
-    sayTouch();
-    delay(2000);
+  else if(touchWert > touchSensitivity && millis() > lastAction + 500){
+    if (random(2))
+    {
+      sayWasSollDas();
+    }
+    else
+    {
+      sayTouch();
+    }
+    Serial.print("klopf 10 sagt: ");
+    Serial.println(klopf_10);
+    Serial.print("real_klopf sagt: ");
+    Serial.println(real_klopf);
+    Serial.print("average_klopf_10 sagt: ");
+    Serial.println(average_klopf_10);
+    Serial.print("touchWert sagt: ");
+    Serial.println(touchWert);
+    Serial.println("");
+    touchWert = 0;
+    delay(1000);
+    lastAction = millis();
   }
-  
-  else if(analogRead(LICHT_PIN)< 400){
-    sayProblem();
-    delay(2000);
+
+  light_10 = analogRead(LICHT_PIN);
+  average_light_10 = (average_light_20 + 512) >> 10;
+  average_light_20 += light_10 - average_light_10;
+  if(light_10 + 5 < average_light_10 - (average_light_10 >> 3)) // empfindlich: >> 3
+  //if(light_10 + 5 < average_light_10 - (average_light_10 >> 2)) // unempfindlich: >> 2
+  {
+    if (random(2))
+    {
+      sayImWeg();
+    }
+    else
+    {
+      sayProblem();
+    }
+    Serial.print("light 10 sagt: ");
+    Serial.println(light_10);
+    Serial.print("average_light_10 sagt: ");
+    Serial.println(average_light_10);
+    Serial.println("");
+    delay(1000);
+    lastAction = millis();
+    average_light_20 = 0; // Normalwert zurücksetzen (neue Licht-Anpassung)
   }  
   else if(digitalRead(ALARM_PIN)){
-      currentMillis = millis();
-      if(lastSoundAlarm == 0 || currentMillis - lastSoundAlarm > alarmSoundPause){
-        lastSoundAlarm = currentMillis;
-        sayAlarm();
-        delay(2000); 
+    currentMillis = millis();
+    if(lastSoundAlarm == 0 || currentMillis - lastSoundAlarm > alarmSoundPause){
+      lastSoundAlarm = currentMillis;
+      sayAlarm();
+      delay(1000);
+      lastAction = millis();
+    }
+    else if(currentMillis - lastTailAlarm > alarmTailPause){
+      lastTailAlarm = currentMillis;
+      wackelFlosse();
+      delay(1000);
+      lastAction = millis();
+    }
+  }
+
+  sound_10 = analogRead(SOUND_PIN);
+  average_sound_10 = (average_sound_15 + 16) >> 5;
+  average_sound_15 += sound_10 - average_sound_10;
+  volume_10 = abs(sound_10 - average_sound_10);
+
+  //Klatschen
+  if (volume_10 > 20)
+  {
+    if (!loud)
+    {
+      if (millis() - last_klatsch < 700)
+      {
+        if(millis() - silent_time > 150)
+        {
+          sayZiege();
+          lastAction = millis();
+          last_klatsch = 0;
+        }
       }
-      else if(currentMillis - lastTailAlarm > alarmTailPause){
-        lastTailAlarm = currentMillis;
-        wackelFlosse();
-        delay(2000); 
+      else
+      {
+        last_klatsch = millis();
       }
+      loud = true;
+    }
+  }
+  else 
+  {
+    if(!volume_10)
+    {
+      if (loud)
+      {
+        silent_time = millis();
+        loud = false;
+      }
+    }
+    else
+    {
+      silent_time = millis();
+    }
+  }
+
+  
+  if (volume_10)
+  {
+    if (volume_10 == 1)
+    {
+      volume_10 = 0;
+    }
+    else
+    {
+      volume_10 = sqrt((volume_10 << 2) - 4.1);
+    }
   }
   
-}
-
-int getPiezoSensorAverage(){
-  return (analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) + analogRead(KLOPF_PIN) +analogRead(KLOPF_PIN)) / 5;
-  
+  average_volume_10 = (average_volume_27 + 65536) >> 17; // ca. 1000 Messungen pro Sekunde >> 17 entspricht ca. 2 Minuten (Tau-Wert)
+  average_volume_27 += volume_10 - average_volume_10; 
+  if((average_volume_27 >> 9) > soundSensitivity)
+  {
+    if (random(2))
+    {
+      sayWasSollDas();
+      sayKannDochSoNich();
+    }
+    else
+    {
+      sayArbeite();
+    }
+    Serial.print("average_sound_10: ");
+    Serial.println(average_sound_10);
+    Serial.print("volume_10: ");
+    Serial.println(volume_10);
+    Serial.print("average_volume_18: ");
+    Serial.println(average_volume_27 >> 9);
+    Serial.println("");
+    delay(1000);
+    lastAction = millis();
+    average_volume_27 = 0; // langfristig gemessene Lautstärke zurücksetzen
+  }
 }
 
 void wackelFlosse(){
@@ -166,6 +335,89 @@ void sayProblem(){
   wackelFlosse();
 }
 
+void sayZiege(){
+  raiseHead();
+  myDFPlayer.play(ZIEGE_SOUND);
+  delay(75);
+  sayWord(1660); //CANT
+  delay(50);
+  lowerHead();
+  wackelFlosse();
+}
+
+void sayArbeite(){
+  raiseHead();
+  myDFPlayer.play(KINSKI_ARBEITE_SOUND);
+  delay(75);
+  sayWord(50);
+  delay(69);
+  sayWord(200);
+  delay(43);
+  sayWord(123);
+  delay(74);
+  sayWord(49);
+  delay(25);
+  sayWord(170);
+  delay(25);
+  sayWord(106);
+  delay(98);
+  sayWord(184);
+  delay(95);
+  sayWord(190);
+  delay(50);
+  lowerHead();
+  wackelFlosse();
+}
+
+void sayKannDochSoNich(){
+  raiseHead();
+  myDFPlayer.play(KINSKI_KANNSONICH_SOUND);
+  delay(168);
+  sayWord(232);
+  delay(130);
+  sayWord(124);
+  delay(254);
+  sayWord(165);
+  delay(230);
+  sayWord(126);
+  delay(188);
+  sayWord(174);
+  delay(84);
+  sayWord(224);
+  delay(50);
+  lowerHead();
+  wackelFlosse();
+}
+
+void sayWasSollDas(){
+  raiseHead();
+  myDFPlayer.play(KINSKI_WASSOLLDAS_SOUND);
+  delay(134);
+  sayWord(48);
+  delay(240);
+  sayWord(182);
+  delay(80);
+  sayWord(83);
+  delay(50);
+  lowerHead();
+  wackelFlosse();
+}
+void sayImWeg(){
+  raiseHead();
+  myDFPlayer.play(KINSKI_IMWEG_SOUND);
+  delay(105);
+  sayWord(99);
+  delay(71);
+  sayWord(97);
+  delay(99);
+  sayWord(63);
+  delay(140);
+  sayWord(269);
+  delay(220);
+  lowerHead();
+  wackelFlosse();
+}
+
 void sayTouch() {
   raiseHead();
   myDFPlayer.play(TOUCH_SOUND);
@@ -177,6 +429,8 @@ void sayTouch() {
   lowerHead();
   wackelFlosse();
 }
+
+
 
 void sayHilfe(){
   raiseHead();
@@ -216,5 +470,5 @@ void setupPlayer()
   myDFPlayer.setTimeOut(500);
   myDFPlayer.outputDevice(DFPLAYER_DEVICE_SD);
   myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
-  myDFPlayer.volume(10);
+  myDFPlayer.volume(25);
 }
