@@ -7,12 +7,13 @@ The idea was to have the billy bass fish integrated in the CO2 monitoring system
 
 Used Parts:
 ----
-Billy Bass fish
-Arduino Pro Mini 168 16MHz 5V    
-DF Player Mini with an SD card    
-Motor drive module DAYPOWER Motor-9110    
-CO2 Sensor: TFA Dostmann AirControl Mini CO2 Meter TFA 31.5006 
-Micro usb connector
+- Billy Bass fish
+- Arduino Pro Mini 168 16MHz 5V    
+- DF Player Mini with an SD card    
+- Motor drive module DAYPOWER Motor-9110    
+- CO2 Sensor: TFA Dostmann AirControl Mini CO2 Meter TFA 31.5006    
+- Microphone
+- Micro usb connector
 
 
 Understand the original setup
@@ -68,3 +69,16 @@ Open mouth: White cable  (-) Red cable    (+)
 Motor 2:    
 Move head:  Orange cable (+) Black cable  (-)    
 Move back:  Black cable  (+) Orange cable (-)    
+
+Co2 sensor connection
+----
+To connect the CO2 sensor we used the buzzer signal port like drawn in the schematic.
+As soon as the critical level is hit the output will return a periodic signal which can be interpreted by the arduino.
+This triggers the alarm and is afterwards ignored for a configured amount of time.
+![CO2Connector](images/Co2Connector.jpeg)   
+
+Finsished result
+----
+Here you can see the finished chaos inside of the fish.
+The component on the backside are deplugable.
+![CO2Connector](images/finishedChaos.jpeg)  
