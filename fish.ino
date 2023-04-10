@@ -7,7 +7,8 @@
 #define LICHT_PIN A2
 #define KLOPF_PIN A3
 //digital
-#define TESTHIGH_PIN 3
+#define LOW_PIN 2
+#define SWITCH_PIN 3
 #define ALARM_PIN 4
 #define BUTTON_PIN 5
 #define MUNDAUF_PIN 6
@@ -37,6 +38,8 @@ unsigned long lastAction = 1000; // Sytemzeit (Millis) der letzten Aktion überh
 unsigned long last_klatsch = 0;
 unsigned long silent_time = 0;
 bool loud = false;
+
+bool toggleSound = false;
 
 byte touchSensitivity = 50; // 10 -> sehr empfindlich , 255 -> unempfindlich
 unsigned int touchWert = 0;
@@ -78,11 +81,14 @@ void setup() {
   
   //Alarm
   pinMode(ALARM_PIN, INPUT);
-  pinMode(TESTHIGH_PIN, OUTPUT);
-  digitalWrite(TESTHIGH_PIN, HIGH);
   
   //Button
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  //Switch
+  pinMode(SWITCH_PIN, INPUT_PULLUP);
+  pinMode(LOW_PIN, OUTPUT);
+  digitalWrite(LOW_PIN, LOW);
   
   //Player
   mySoftwareSerial.begin(9600);
@@ -145,7 +151,7 @@ void loop() {
     touchWert = 0;
   }
   else if((touchWert >> 2) > touchSensitivity){
-    if (random(2))
+    if (getSwitchMode())
     {
       sayWasSollDas();
     }
@@ -173,7 +179,7 @@ void loop() {
   if(light_10 + 5 < average_light_10 - (average_light_10 >> 3)) // empfindlich: >> 3
   //if(light_10 + 5 < average_light_10 - (average_light_10 >> 2)) // unempfindlich: >> 2
   {
-    if (random(2))
+    if (getSwitchMode())
     {
       sayImWeg();
     }
@@ -212,7 +218,7 @@ void loop() {
   volume_10 = abs(sound_10 - average_sound_10);
 
   //Klatschen
-  if (volume_10 > 8)
+  if (volume_10 > 4)
   {
     if (!loud)
     {
@@ -234,7 +240,7 @@ void loop() {
   }
   else 
   {
-    if(volume_10 < 2)
+    if(volume_10 < 3)
     {
       if (loud)
       {
@@ -266,7 +272,7 @@ void loop() {
   average_volume_27 += volume_10 - average_volume_10; 
   if((average_volume_27 >> 7) > soundSensitivity)
   {
-    if (random(2))
+    if (getSwitchMode())
     {
       //sayWasSollDas();
       sayKannDochSoNich();
@@ -286,6 +292,11 @@ void loop() {
     lastAction = millis();
     average_volume_27 = 0; // langfristig gemessene Lautstärke zurücksetzen
   }
+}
+
+int getSwitchMode(){
+  toggleSound = !toggleSound;
+  return toggleSound;
 }
 
 void wackelFlosse(){
