@@ -38,7 +38,7 @@ unsigned long last_klatsch = 0;
 unsigned long silent_time = 0;
 bool loud = false;
 
-byte touchSensitivity = 5;
+byte touchSensitivity = 50; // 10 -> sehr empfindlich , 255 -> unempfindlich
 unsigned int touchWert = 0;
 int klopf_10; // gemessener Klopfwert (10 Bit)
 int real_klopf; // Differenz zum Durchschnitt (Absolutwert 10 Bit)
@@ -49,7 +49,7 @@ int light_10; // gemessener Lichtwert (10 Bit)
 int average_light_10 = 0; // durchschnittlticher Lichtwert (10 Bit)
 long average_light_20 = 0; // durchschnittlticher Lichtwert (13 Bit)
 
-byte soundSensitivity = 5; // 1 -> sehr empfindlich , 255 -> unempfindlich
+byte soundSensitivity = 100; // 1 -> sehr empfindlich , 255 -> unempfindlich
 unsigned int soundWert = 0;
 int sound_10; // gemessener Soundwert (10 Bit)
 int average_sound_10 = 0; // durchschnittlticher Soundwert (10 Bit)
@@ -127,20 +127,24 @@ void loop() {
   //Serial.print("touchWert sagt: ");
   //Serial.println(touchWert);
 
+  if(!digitalRead(BUTTON_PIN)){
+    sayHilfe();
+    delay(2000);
+    lastAction = millis();
+  }
+  
   klopf_10 = analogRead(KLOPF_PIN);
   average_klopf_10 = (average_klopf_13 + 4) >> 3;
   average_klopf_13 += klopf_10 - average_klopf_10;
   real_klopf = abs(klopf_10 - average_klopf_10);
   touchWert += real_klopf;
-  if(touchWert >= 3) touchWert -= 3;
-  else touchWert = 0;
-  
-  if(!digitalRead(BUTTON_PIN)){
-    sayHilfe();
-    delay(2000);
-    lastAction = millis();
-  }  
-  else if(touchWert > touchSensitivity && millis() > lastAction + 500){
+  if(touchWert) touchWert --;
+    
+  if (millis() < lastAction + 1000)
+  {
+    touchWert = 0;
+  }
+  else if((touchWert >> 2) > touchSensitivity){
     if (random(2))
     {
       sayWasSollDas();
@@ -208,13 +212,13 @@ void loop() {
   volume_10 = abs(sound_10 - average_sound_10);
 
   //Klatschen
-  if (volume_10 > 20)
+  if (volume_10 > 8)
   {
     if (!loud)
     {
-      if (millis() - last_klatsch < 700)
+      if (millis() - last_klatsch < 900)
       {
-        if(millis() - silent_time > 150)
+        if(millis() - silent_time > 100)
         {
           sayZiege();
           lastAction = millis();
@@ -230,7 +234,7 @@ void loop() {
   }
   else 
   {
-    if(!volume_10)
+    if(volume_10 < 2)
     {
       if (loud)
       {
@@ -253,17 +257,18 @@ void loop() {
     }
     else
     {
-      volume_10 = sqrt((volume_10 << 2) - 4.1);
+      //volume_10 = sqrt((volume_10 << 2) - 4.1);
+      volume_10 = pow (((volume_10 << 3) - 6), 0.3);
     }
   }
   
   average_volume_10 = (average_volume_27 + 65536) >> 17; // ca. 1000 Messungen pro Sekunde >> 17 entspricht ca. 2 Minuten (Tau-Wert)
   average_volume_27 += volume_10 - average_volume_10; 
-  if((average_volume_27 >> 9) > soundSensitivity)
+  if((average_volume_27 >> 7) > soundSensitivity)
   {
     if (random(2))
     {
-      sayWasSollDas();
+      //sayWasSollDas();
       sayKannDochSoNich();
     }
     else
@@ -274,8 +279,8 @@ void loop() {
     Serial.println(average_sound_10);
     Serial.print("volume_10: ");
     Serial.println(volume_10);
-    Serial.print("average_volume_18: ");
-    Serial.println(average_volume_27 >> 9);
+    Serial.print("average_volume_20: ");
+    Serial.println(average_volume_27 >> 7);
     Serial.println("");
     delay(1000);
     lastAction = millis();
