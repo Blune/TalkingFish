@@ -27,6 +27,7 @@
 #define KINSKI_KANNSONICH_SOUND 10
 #define KINSKI_WASSOLLDAS_SOUND 11
 #define KINSKI_IMWEG_SOUND 12
+#define BOOT_SOUND 13
 
 //VARIABLES
 unsigned long currentMillis;
@@ -62,13 +63,13 @@ int average_volume_10; // Lautstärke (Durchschnitt über 2 Minuten, 10 Bit)
 long average_volume_27; // Lautstärke (Durchschnitt über 2 Minuten, 27 Bit)
 
 byte playerBootingTime = 100;
-SoftwareSerial mySoftwareSerial(10,11);
+SoftwareSerial mySoftwareSerial(10, 11);
 DFRobotDFPlayerMini myDFPlayer;
 
 void setup() {
   //Sound: Analog digital Messung beschleunigen
   // ADCSRA = (ADCSRA & 248) | 6; // doch nicht nötig (Geschwindigkeit reicht aus)
-  
+
   //Motors
   pinMode(MUNDAUF_PIN, OUTPUT);
   digitalWrite(MUNDAUF_PIN, LOW);
@@ -78,10 +79,10 @@ void setup() {
   digitalWrite(FLOSSE_PIN, LOW);
   pinMode(KOPF_PIN, OUTPUT);
   digitalWrite(KOPF_PIN, LOW);
-  
+
   //Alarm
   pinMode(ALARM_PIN, INPUT);
-  
+
   //Button
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -89,21 +90,24 @@ void setup() {
   pinMode(SWITCH_PIN, INPUT_PULLUP);
   pinMode(LOW_PIN, OUTPUT);
   digitalWrite(LOW_PIN, LOW);
-  
+
   //Player
   mySoftwareSerial.begin(9600);
   Serial.begin(38400);
   delay(playerBootingTime);
-  if (!myDFPlayer.begin(mySoftwareSerial)) 
-  {  
+  if (!myDFPlayer.begin(mySoftwareSerial))
+  {
     Serial.println(F("Could not boot DFPlayer Mini. Stopped setup"));
-    while(true);
+    while (true);
   }
-  
+
   setupPlayer();
   Serial.println(F("Setup done!"));
-  
+
   average_sound_15 = analogRead(SOUND_PIN) << 5; // Durchschnittswert (grob) setzen
+
+  delay(100);
+  sayBoot();
 }
 
 void loop() {
@@ -114,7 +118,7 @@ void loop() {
 
   //Serial.print("Sound sagt: ");
   //Serial.println(analogRead(SOUND_PIN));
-  
+
   //Serial.print("Licht: ");
   //Serial.println(analogRead(LICHT_PIN));
 
@@ -125,7 +129,7 @@ void loop() {
 
   //Serial.print("K: ");
   //Serial.println(klopf_10);
- 
+
 
   //Serial.print("piezo 10 sagt: ");
   //Serial.println(piezo_10);
@@ -133,24 +137,24 @@ void loop() {
   //Serial.print("touchWert sagt: ");
   //Serial.println(touchWert);
 
-  if(!digitalRead(BUTTON_PIN)){
+  if (!digitalRead(BUTTON_PIN)) {
     sayHilfe();
     delay(2000);
     lastAction = millis();
   }
-  
+
   klopf_10 = analogRead(KLOPF_PIN);
   average_klopf_10 = (average_klopf_13 + 4) >> 3;
   average_klopf_13 += klopf_10 - average_klopf_10;
   real_klopf = abs(klopf_10 - average_klopf_10);
   touchWert += real_klopf;
-  if(touchWert) touchWert --;
-    
+  if (touchWert) touchWert --;
+
   if (millis() < lastAction + 1000)
   {
     touchWert = 0;
   }
-  else if((touchWert >> 2) > touchSensitivity){
+  else if ((touchWert >> 2) > touchSensitivity) {
     if (getSwitchMode())
     {
       sayWasSollDas();
@@ -176,8 +180,8 @@ void loop() {
   light_10 = analogRead(LICHT_PIN);
   average_light_10 = (average_light_20 + 512) >> 10;
   average_light_20 += light_10 - average_light_10;
-  if(light_10 + 5 < average_light_10 - (average_light_10 >> 3)) // empfindlich: >> 3
-  //if(light_10 + 5 < average_light_10 - (average_light_10 >> 2)) // unempfindlich: >> 2
+  if (light_10 + 5 < average_light_10 - (average_light_10 >> 3)) // empfindlich: >> 3
+    //if(light_10 + 5 < average_light_10 - (average_light_10 >> 2)) // unempfindlich: >> 2
   {
     if (getSwitchMode())
     {
@@ -195,16 +199,16 @@ void loop() {
     delay(1000);
     lastAction = millis();
     average_light_20 = 0; // Normalwert zurücksetzen (neue Licht-Anpassung)
-  }  
-  else if(digitalRead(ALARM_PIN)){
+  }
+  else if (digitalRead(ALARM_PIN)) {
     currentMillis = millis();
-    if(lastSoundAlarm == 0 || currentMillis - lastSoundAlarm > alarmSoundPause){
+    if (lastSoundAlarm == 0 || currentMillis - lastSoundAlarm > alarmSoundPause) {
       lastSoundAlarm = currentMillis;
       sayAlarm();
       delay(1000);
       lastAction = millis();
     }
-    else if(currentMillis - lastTailAlarm > alarmTailPause){
+    else if (currentMillis - lastTailAlarm > alarmTailPause) {
       lastTailAlarm = currentMillis;
       wackelFlosse();
       delay(1000);
@@ -224,7 +228,7 @@ void loop() {
     {
       if (millis() - last_klatsch < 900)
       {
-        if(millis() - silent_time > 100)
+        if (millis() - silent_time > 100)
         {
           sayZiege();
           lastAction = millis();
@@ -238,9 +242,9 @@ void loop() {
       loud = true;
     }
   }
-  else 
+  else
   {
-    if(volume_10 < 3)
+    if (volume_10 < 3)
     {
       if (loud)
       {
@@ -254,7 +258,7 @@ void loop() {
     }
   }
 
-  
+
   if (volume_10)
   {
     if (volume_10 == 1)
@@ -267,10 +271,10 @@ void loop() {
       volume_10 = pow (((volume_10 << 3) - 6), 0.3);
     }
   }
-  
+
   average_volume_10 = (average_volume_27 + 65536) >> 17; // ca. 1000 Messungen pro Sekunde >> 17 entspricht ca. 2 Minuten (Tau-Wert)
-  average_volume_27 += volume_10 - average_volume_10; 
-  if((average_volume_27 >> 7) > soundSensitivity)
+  average_volume_27 += volume_10 - average_volume_10;
+  if ((average_volume_27 >> 7) > soundSensitivity)
   {
     if (getSwitchMode())
     {
@@ -294,12 +298,16 @@ void loop() {
   }
 }
 
-int getSwitchMode(){
+int getSwitchMode() {
   toggleSound = !toggleSound;
   return toggleSound;
 }
 
-void wackelFlosse(){
+int getAdvancedMode() {  
+  return digitalRead(SWITCH_PIN);
+}
+
+void wackelFlosse() {
   digitalWrite(FLOSSE_PIN, HIGH);
   delay(500);
   digitalWrite(FLOSSE_PIN, LOW);
@@ -311,16 +319,16 @@ void sayWord(int duration) {
   digitalWrite(MUNDAUF_PIN, LOW);
 }
 
-void raiseHead(){
+void raiseHead() {
   digitalWrite(KOPF_PIN, HIGH);
   delay(500);
 }
 
-void lowerHead(){
+void lowerHead() {
   digitalWrite(KOPF_PIN, LOW);
 }
 
-void sayAlarm(){
+void sayAlarm() {
   raiseHead();
   myDFPlayer.play(ALARM_SOUND);
   sayWord(790);
@@ -330,7 +338,7 @@ void sayAlarm(){
   lowerHead();
 }
 
-void sayProblem(){
+void sayProblem() {
   raiseHead();
   myDFPlayer.play(LIGHT_SOUND);
   delay(60);
@@ -351,17 +359,25 @@ void sayProblem(){
   wackelFlosse();
 }
 
-void sayZiege(){
+void sayBoot() {
+  raiseHead();
+  myDFPlayer.play(BOOT_SOUND);
+  delay(3000);
+  lowerHead();
+  wackelFlosse();
+}
+
+void sayZiege() {
   raiseHead();
   myDFPlayer.play(ZIEGE_SOUND);
   delay(75);
-  sayWord(1660); //CANT
+  sayWord(1660);
   delay(50);
   lowerHead();
   wackelFlosse();
 }
 
-void sayArbeite(){
+void sayArbeite() {
   raiseHead();
   myDFPlayer.play(KINSKI_ARBEITE_SOUND);
   delay(75);
@@ -385,7 +401,7 @@ void sayArbeite(){
   wackelFlosse();
 }
 
-void sayKannDochSoNich(){
+void sayKannDochSoNich() {
   raiseHead();
   myDFPlayer.play(KINSKI_KANNSONICH_SOUND);
   delay(168);
@@ -405,7 +421,7 @@ void sayKannDochSoNich(){
   wackelFlosse();
 }
 
-void sayWasSollDas(){
+void sayWasSollDas() {
   raiseHead();
   myDFPlayer.play(KINSKI_WASSOLLDAS_SOUND);
   delay(134);
@@ -418,7 +434,7 @@ void sayWasSollDas(){
   lowerHead();
   wackelFlosse();
 }
-void sayImWeg(){
+void sayImWeg() {
   raiseHead();
   myDFPlayer.play(KINSKI_IMWEG_SOUND);
   delay(105);
@@ -448,7 +464,7 @@ void sayTouch() {
 
 
 
-void sayHilfe(){
+void sayHilfe() {
   raiseHead();
   myDFPlayer.play(BUTTON_SOUND);
   delay(25);
@@ -466,17 +482,17 @@ void sayHilfe(){
   delay(70);
   sayWord(58); //GEFAHR
   delay(141);
-  sayWord(52); 
+  sayWord(52);
   delay(100);
-  sayWord(172); 
+  sayWord(172);
   delay(194);
-  sayWord(46); 
+  sayWord(46);
   delay(47);
   sayWord(240);
   delay(207);
-  sayWord(61); 
+  sayWord(61);
   delay(67);
-  sayWord(120); 
+  sayWord(120);
   delay(50);
   lowerHead();
 }
